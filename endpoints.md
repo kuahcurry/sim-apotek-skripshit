@@ -1,19 +1,5 @@
 # API Endpoints Reference
 
-## ✅ All Backend Controllers Created Successfully
-
-Total: **18 API Controllers** with **150+ endpoints**
-
-## Directory Issue RESOLVED ✅
-
-**Problem**: You were running `php artisan` from `C:\Projects\Website\skripshit` (parent directory)  
-**Solution**: Laravel project is in `C:\Projects\Website\skripshit\skrisphui` subdirectory
-
-**Always run commands from the Laravel directory:**
-```bash
-cd C:\Projects\Website\skripshit\skrisphui
-```
-
 ## 📊 Complete API Endpoint List
 
 ### Authentication
@@ -172,36 +158,6 @@ cd C:\Projects\Website\skripshit\skrisphui
 - GET `/api/reports/unit-requests` - Unit request report
 - GET `/api/reports/export/{type}` - Export to PDF/Excel (requires additional packages)
 
-## 🔐 Authentication
-
-All `/api/*` routes require authentication using Laravel Sanctum Bearer tokens.
-
-**Example:**
-```http
-GET /api/dashboard/stats
-Authorization: Bearer {your-token-here}
-```
-
-## 📝 Common Query Parameters
-
-Most list endpoints support:
-- `?search={query}` - Search filter
-- `?per_page={number}` - Items per page (default: 15)
-- `?page={number}` - Page number
-- `?sort_by={field}` - Sort field
-- `?sort_order={asc|desc}` - Sort direction
-- `?date_from={date}` - Date range start
-- `?date_to={date}` - Date range end
-
-## ✅ Database Seeded
-
-Sample data created:
-- 4 Users (admin, 2 pharmacists, manager) - Password: `password`
-- 25 Medicine categories
-- 25 Medicine forms
-- 25 Units of measure
-- 18 Hospital departments
-- 10 Sample medicines with batches
 
 ## 🎯 Next Steps
 
