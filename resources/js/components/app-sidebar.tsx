@@ -13,7 +13,26 @@ import {
 import { dashboard } from '@/routes';
 import { type NavItem } from '@/types';
 import { Link } from '@inertiajs/react';
-import { BookOpen, Folder, LayoutGrid } from 'lucide-react';
+import { 
+    BookOpen, 
+    Folder, 
+    LayoutGrid,
+    Pill,
+    Package,
+    TrendingUp,
+    TrendingDown,
+    Clipboard,
+    ClipboardCheck,
+    Trash2,
+    QrCode,
+    FileText,
+    Users,
+    Building2,
+    Truck,
+    Tags,
+    Box,
+    MessageCircleQuestion
+} from 'lucide-react';
 import AppLogo from './app-logo';
 
 const mainNavItems: NavItem[] = [
@@ -22,17 +41,119 @@ const mainNavItems: NavItem[] = [
         href: dashboard(),
         icon: LayoutGrid,
     },
+    {
+        title: 'Obat',
+        href: '#',
+        icon: Pill,
+        items: [
+            {
+                title: 'Data Obat',
+                href: '/obat',
+            },
+            {
+                title: 'Batch Obat',
+                href: '/batch',
+            },
+            {
+                title: 'Resep',
+                href: '/resep',
+            },
+            {
+                title: 'Pemusnahan',
+                href: '/pemusnahan',
+            },
+            {
+                title: 'QR Code',
+                href: '/qr',
+            },
+        ],
+    },
+    {
+        title: 'Transaksi',
+        href: '/transaksi',
+        icon: TrendingUp,
+        items: [
+            {
+                title: 'Semua Transaksi',
+                href: '/transaksi',
+            },
+            {
+                title: 'Barang Masuk',
+                href: '/transaksi/masuk',
+            },
+            {
+                title: 'Barang Keluar',
+                href: '/transaksi/keluar',
+            },
+        ],
+    },
+    {
+        title: 'Permintaan Unit',
+        href: '/permintaan',
+        icon: Clipboard,
+    },
+    {
+        title: 'Stok Opname',
+        href: '/stok-opname',
+        icon: ClipboardCheck,
+    },
+    {
+        title: 'Master Data',
+        href: '#',
+        icon: Box,
+        items: [
+            {
+                title: 'Kategori Obat',
+                href: '/kategori-obat',
+            },
+            {
+                title: 'Jenis Obat',
+                href: '/jenis-obat',
+            },
+            {
+                title: 'Satuan Obat',
+                href: '/satuan-obat',
+            },
+            {
+                title: 'Unit Rumah Sakit',
+                href: '/unit-rumah-sakit',
+            },
+            {
+                title: 'Supplier',
+                href: '/supplier',
+            },
+        ],
+    },
+    {
+        title: 'Laporan',
+        href: '/reports',
+        icon: FileText,
+        items: [
+            {
+                title: 'Laporan Stok',
+                href: '/reports/stock',
+            },
+            {
+                title: 'Laporan Transaksi',
+                href: '/reports/transactions',
+            },
+            {
+                title: 'Laporan Kadaluarsa',
+                href: '/reports/expiry',
+            },
+        ],
+    }
 ];
 
 const footerNavItems: NavItem[] = [
     {
-        title: 'Repository',
-        href: 'https://github.com/laravel/react-starter-kit',
-        icon: Folder,
+        title: 'FAQ',
+        href: '/faq',
+        icon: MessageCircleQuestion,
     },
     {
-        title: 'Documentation',
-        href: 'https://laravel.com/docs/starter-kits#react',
+        title: 'Dokumentasi',
+        href: '/dokumentasi',
         icon: BookOpen,
     },
 ];

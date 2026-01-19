@@ -9,9 +9,59 @@ use App\Models\PermintaanUnit;
 use App\Models\Transaksi;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Inertia\Inertia;
+use Inertia\Response;
 
 class DashboardController extends Controller
 {
+    /**
+     * Display the dashboard page
+     */
+    public function index(Request $request): Response
+    {
+        $stats = [
+            'total_obat' => Obat::active()->count(),
+            'total_stok' => Obat::active()->sum('stok_total'),
+            'low_stock_count' => Obat::active()->stokRendah()->count(),
+            'expired_soon_count' => BatchObat::active()->expiringSoon(30)->count(),
+            'pending_requests' => PermintaanUnit::pending()->count(),
+            'urgent_requests' => PermintaanUnit::pending()->urgent()->count(),
+            'today_transactions' => Transaksi::today()->count(),
+            'today_incoming' => Transaksi::today()->masuk()->sum('jumlah'),
+            'today_outgoing' => Transaksi::today()->keluar()->sum('jumlah'),
+        ];
+
+        // Get low stock medicines
+        $lowStock = Obat::with(['kategori', 'jenis', 'satuan'])
+            ->active()
+            ->stokRendah()
+            ->orderByRaw('(stok_total - stok_minimum)')
+            ->limit(5)
+            ->get();
+
+        // Get expiring soon batches
+        $expiringSoon = BatchObat::with(['obat.kategori'])
+            ->active()
+            ->expiringSoon(30)
+            ->orderBy('tanggal_expired', 'asc')
+            ->limit(5)
+            ->get();
+
+        // Get pending requests
+        $pendingRequests = PermintaanUnit::with(['unit', 'user'])
+            ->pending()
+            ->latest()
+            ->limit(5)
+            ->get();
+
+        return Inertia::render('dashboard', [
+            'stats' => $stats,
+            'lowStock' => $lowStock,
+            'expiringSoon' => $expiringSoon,
+            'pendingRequests' => $pendingRequests,
+        ]);
+    }
+
     /**
      * Get dashboard statistics
      */
