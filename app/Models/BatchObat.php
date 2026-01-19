@@ -70,6 +70,14 @@ class BatchObat extends Model
     }
 
     /**
+     * Get the supplier for this batch
+     */
+    public function supplier(): BelongsTo
+    {
+        return $this->belongsTo(Supplier::class, 'supplier_id');
+    }
+
+    /**
      * Get all transactions for this batch
      */
     public function transaksi(): HasMany

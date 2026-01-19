@@ -112,6 +112,14 @@ class Transaksi extends Model
     }
 
     /**
+     * Get the prescription for this transaction
+     */
+    public function resep(): BelongsTo
+    {
+        return $this->belongsTo(Resep::class, 'resep_id');
+    }
+
+    /**
      * Get activity logs
      */
     public function logAktivitas(): MorphMany

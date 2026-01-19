@@ -7,10 +7,14 @@ use App\Http\Controllers\Api\KategoriObatController;
 use App\Http\Controllers\Api\LogAktivitasController;
 use App\Http\Controllers\Api\NotifikasiController;
 use App\Http\Controllers\Api\ObatController;
+use App\Http\Controllers\Api\PemusnahanObatController;
 use App\Http\Controllers\Api\PermintaanUnitController;
 use App\Http\Controllers\Api\QrCodeController;
 use App\Http\Controllers\Api\ReportController;
+use App\Http\Controllers\Api\ResepController;
 use App\Http\Controllers\Api\SatuanObatController;
+use App\Http\Controllers\Api\StokOpnameController;
+use App\Http\Controllers\Api\SupplierController;
 use App\Http\Controllers\Api\TransaksiController;
 use App\Http\Controllers\Api\UnitRumahSakitController;
 use App\Http\Controllers\Api\UserController;
@@ -105,6 +109,31 @@ Route::middleware(['auth:sanctum'])->group(function () {
         Route::post('/read-all', [NotifikasiController::class, 'markAllAsRead']);
     });
 
+    // Resep (Prescription)
+    Route::prefix('resep')->group(function () {
+        Route::get('/pending', [ResepController::class, 'pending']);
+        Route::post('/{resep}/process', [ResepController::class, 'process']);
+        Route::post('/{resep}/complete', [ResepController::class, 'complete']);
+    });
+    Route::apiResource('resep', ResepController::class);
+
+    // Stok Opname (Stock Taking)
+    Route::prefix('stok-opname')->group(function () {
+        Route::get('/pending-approval', [StokOpnameController::class, 'pendingApproval']);
+        Route::post('/{stokOpname}/complete', [StokOpnameController::class, 'complete']);
+        Route::post('/{stokOpname}/approve', [StokOpnameController::class, 'approve']);
+    });
+    Route::apiResource('stok-opname', StokOpnameController::class);
+
+    // Pemusnahan Obat (Drug Destruction)
+    Route::prefix('pemusnahan')->group(function () {
+        Route::get('/eligible', [PemusnahanObatController::class, 'eligibleForDestruction']);
+        Route::get('/pending-approval', [PemusnahanObatController::class, 'pendingApproval']);
+        Route::post('/{pemusnahanObat}/upload-ba', [PemusnahanObatController::class, 'uploadBeritaAcara']);
+        Route::post('/{pemusnahanObat}/approve', [PemusnahanObatController::class, 'approve']);
+    });
+    Route::apiResource('pemusnahan', PemusnahanObatController::class);
+
     // Reports (Manager & Admin access)
     Route::prefix('reports')->group(function () {
         Route::get('/stock', [ReportController::class, 'stockReport']);
@@ -113,6 +142,39 @@ Route::middleware(['auth:sanctum'])->group(function () {
         Route::get('/unit-requests', [ReportController::class, 'unitRequestReport']);
         Route::get('/export/{type}', [ReportController::class, 'export']);
     });
+
+    // Master Data Management
+    Route::prefix('kategori')->group(function () {
+        Route::get('/active', [KategoriObatController::class, 'active']);
+        Route::post('/{kategoriObat}/toggle-status', [KategoriObatController::class, 'toggleStatus']);
+    });
+    Route::apiResource('kategori', KategoriObatController::class);
+
+    Route::prefix('jenis')->group(function () {
+        Route::get('/active', [JenisObatController::class, 'active']);
+        Route::post('/{jenisObat}/toggle-status', [JenisObatController::class, 'toggleStatus']);
+    });
+    Route::apiResource('jenis', JenisObatController::class);
+
+    Route::prefix('satuan')->group(function () {
+        Route::get('/active', [SatuanObatController::class, 'active']);
+        Route::post('/{satuanObat}/toggle-status', [SatuanObatController::class, 'toggleStatus']);
+    });
+    Route::apiResource('satuan', SatuanObatController::class);
+
+    Route::prefix('unit')->group(function () {
+        Route::get('/active', [UnitRumahSakitController::class, 'active']);
+        Route::get('/{unitRumahSakit}/statistics', [UnitRumahSakitController::class, 'statistics']);
+        Route::post('/{unitRumahSakit}/toggle-status', [UnitRumahSakitController::class, 'toggleStatus']);
+    });
+    Route::apiResource('unit', UnitRumahSakitController::class);
+
+    Route::prefix('supplier')->group(function () {
+        Route::get('/active', [SupplierController::class, 'active']);
+        Route::get('/{supplier}/statistics', [SupplierController::class, 'statistics']);
+        Route::post('/{supplier}/toggle-status', [SupplierController::class, 'toggleStatus']);
+    });
+    Route::apiResource('supplier', SupplierController::class);
 
     // Admin only routes
     Route::middleware(['can:manage-users'])->group(function () {
