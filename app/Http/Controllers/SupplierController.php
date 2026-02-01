@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Supplier;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -13,7 +14,7 @@ class SupplierController extends Controller
      */
     public function index(): Response
     {
-        return Inertia::render('supplier/index');
+        return Inertia::render('masterdata/index');
     }
 
     /**
@@ -29,7 +30,25 @@ class SupplierController extends Controller
      */
     public function store(Request $request)
     {
-        //
+        $validated = $request->validate([
+            'kode_supplier' => 'required|string|max:20|unique:supplier,kode_supplier',
+            'nama_supplier' => 'required|string|max:200',
+            'alamat' => 'nullable|string',
+            'no_telepon' => 'nullable|string|max:20',
+            'email' => 'nullable|email|max:100',
+            'kontak_person' => 'nullable|string|max:100',
+            'no_hp_kontak' => 'nullable|string|max:20',
+            'npwp' => 'nullable|string|max:30',
+            'status' => 'in:active,inactive',
+            'catatan' => 'nullable|string',
+        ]);
+
+        $validated['status'] = $validated['status'] ?? 'active';
+
+        Supplier::create($validated);
+
+        return redirect()->route('masterdata.index')
+            ->with('success', 'Supplier berhasil ditambahkan');
     }
 
     /**
@@ -53,7 +72,25 @@ class SupplierController extends Controller
      */
     public function update(Request $request, string $id)
     {
-        //
+        $supplier = Supplier::findOrFail($id);
+
+        $validated = $request->validate([
+            'kode_supplier' => 'required|string|max:20|unique:supplier,kode_supplier,' . $id,
+            'nama_supplier' => 'required|string|max:200',
+            'alamat' => 'nullable|string',
+            'no_telepon' => 'nullable|string|max:20',
+            'email' => 'nullable|email|max:100',
+            'kontak_person' => 'nullable|string|max:100',
+            'no_hp_kontak' => 'nullable|string|max:20',
+            'npwp' => 'nullable|string|max:30',
+            'status' => 'in:active,inactive',
+            'catatan' => 'nullable|string',
+        ]);
+
+        $supplier->update($validated);
+
+        return redirect()->route('masterdata.index')
+            ->with('success', 'Supplier berhasil diperbarui');
     }
 
     /**
@@ -61,6 +98,10 @@ class SupplierController extends Controller
      */
     public function destroy(string $id)
     {
-        //
+        $supplier = Supplier::findOrFail($id);
+        $supplier->delete();
+
+        return redirect()->route('masterdata.index')
+            ->with('success', 'Supplier berhasil dihapus');
     }
 }

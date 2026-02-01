@@ -98,35 +98,13 @@ const mainNavItems: NavItem[] = [
         icon: ClipboardCheck,
     },
     {
-        title: 'Master Data',
-        href: '#',
+        title: 'Master Data Obat',
         icon: Box,
-        items: [
-            {
-                title: 'Kategori Obat',
-                href: '/kategori-obat',
-            },
-            {
-                title: 'Jenis Obat',
-                href: '/jenis-obat',
-            },
-            {
-                title: 'Satuan Obat',
-                href: '/satuan-obat',
-            },
-            {
-                title: 'Unit Rumah Sakit',
-                href: '/unit-rumah-sakit',
-            },
-            {
-                title: 'Supplier',
-                href: '/supplier',
-            },
-        ],
+        href: '/masterdata'
     },
     {
         title: 'Laporan',
-        href: '/reports',
+        href: '/laporan',
         icon: FileText,
         items: [
             {

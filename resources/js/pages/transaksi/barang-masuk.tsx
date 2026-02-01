@@ -2,37 +2,38 @@ import { Button } from '@/components/ui/button';
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
 import { Head, Link } from '@inertiajs/react';
-import { Tags, Plus } from 'lucide-react';
+import { ArrowDownToLine, Plus } from 'lucide-react';
 
 const breadcrumbs: BreadcrumbItem[] = [
     { title: 'Dashboard', href: '/dashboard' },
-    { title: 'Kategori Obat', href: '/kategori-obat' },
+    { title: 'Transaksi', href: '/transaksi' },
+    { title: 'Barang Masuk', href: '/transaksi/masuk' },
 ];
 
-export default function KategoriObatIndex() {
+export default function BarangMasuk() {
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
-            <Head title="Kategori Obat" />
+            <Head title="Barang Masuk" />
             <div className="flex h-full flex-1 flex-col gap-4 p-4">
                 <div className="flex items-center justify-between">
                     <div>
-                        <h1 className="text-2xl font-bold">Kategori Obat</h1>
+                        <h1 className="text-2xl font-bold">Barang Masuk</h1>
                         <p className="text-sm text-muted-foreground">
-                            Kelola kategori obat
+                            Kelola transaksi barang masuk
                         </p>
                     </div>
                     <Button asChild>
-                        <Link href="/kategori-obat/create">
+                        <Link href="/transaksi/create">
                             <Plus className="mr-2 size-4" />
-                            Tambah Kategori
+                            Tambah Barang Masuk
                         </Link>
                     </Button>
                 </div>
                 <div className="flex flex-1 items-center justify-center rounded-xl border border-sidebar-border/70 bg-card">
                     <div className="text-center">
-                        <Tags className="mx-auto mb-4 size-12 text-muted-foreground" />
+                        <ArrowDownToLine className="mx-auto mb-4 size-12 text-muted-foreground" />
                         <p className="text-muted-foreground">
-                            Halaman Kategori Obat
+                            Halaman Barang Masuk
                         </p>
                     </div>
                 </div>

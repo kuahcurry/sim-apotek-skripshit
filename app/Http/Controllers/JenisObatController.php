@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\JenisObat;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -13,7 +14,7 @@ class JenisObatController extends Controller
      */
     public function index(): Response
     {
-        return Inertia::render('jenis-obat/index');
+        return Inertia::render('masterdata/index');
     }
 
     /**
@@ -29,7 +30,18 @@ class JenisObatController extends Controller
      */
     public function store(Request $request)
     {
-        //
+        $validated = $request->validate([
+            'nama_jenis' => 'required|string|max:100|unique:jenis_obat,nama_jenis',
+            'deskripsi' => 'nullable|string',
+            'is_active' => 'boolean',
+        ]);
+
+        $validated['is_active'] = $validated['is_active'] ?? true;
+
+        JenisObat::create($validated);
+
+        return redirect()->route('masterdata.index')
+            ->with('success', 'Jenis obat berhasil ditambahkan');
     }
 
     /**
@@ -53,7 +65,18 @@ class JenisObatController extends Controller
      */
     public function update(Request $request, string $id)
     {
-        //
+        $jenis = JenisObat::findOrFail($id);
+
+        $validated = $request->validate([
+            'nama_jenis' => 'required|string|max:100|unique:jenis_obat,nama_jenis,' . $id,
+            'deskripsi' => 'nullable|string',
+            'is_active' => 'boolean',
+        ]);
+
+        $jenis->update($validated);
+
+        return redirect()->route('masterdata.index')
+            ->with('success', 'Jenis obat berhasil diperbarui');
     }
 
     /**
@@ -61,6 +84,10 @@ class JenisObatController extends Controller
      */
     public function destroy(string $id)
     {
-        //
+        $jenis = JenisObat::findOrFail($id);
+        $jenis->delete();
+
+        return redirect()->route('masterdata.index')
+            ->with('success', 'Jenis obat berhasil dihapus');
     }
 }

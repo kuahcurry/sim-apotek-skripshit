@@ -4,56 +4,36 @@ use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 use Laravel\Fortify\Features;
 
+/**
+ * Main Web Routes
+ * Organized routes are split into separate files for better maintainability
+ */
+
+// Welcome/Landing Page
 Route::get('/', function () {
     return Inertia::render('welcome', [
         'canRegister' => Features::enabled(Features::registration()),
     ]);
 })->name('home');
 
+// Authenticated Routes
 Route::middleware(['auth', 'verified'])->group(function () {
+    // Dashboard
     Route::get('dashboard', [\App\Http\Controllers\Api\DashboardController::class, 'index'])->name('dashboard');
     
-    // Obat (Medicines)
-    Route::resource('obat', \App\Http\Controllers\ObatController::class);
-    
-    // Batch Obat
-    Route::resource('batch', \App\Http\Controllers\BatchObatController::class);
-    
-    // Transaksi
-    Route::get('transaksi', [\App\Http\Controllers\TransaksiController::class, 'index'])->name('transaksi.index');
-    Route::get('transaksi/masuk', [\App\Http\Controllers\TransaksiController::class, 'masuk'])->name('transaksi.masuk');
-    Route::get('transaksi/keluar', [\App\Http\Controllers\TransaksiController::class, 'keluar'])->name('transaksi.keluar');
-    Route::resource('transaksi', \App\Http\Controllers\TransaksiController::class)->except(['index']);
-    
-    // Permintaan Unit
+    // Permintaan Unit (Unit Requests)
     Route::resource('permintaan', \App\Http\Controllers\PermintaanUnitController::class);
     
-    // Resep
-    Route::resource('resep', \App\Http\Controllers\ResepController::class);
-    
-    // Stok Opname
+    // Stok Opname (Stock Taking)
     Route::resource('stok-opname', \App\Http\Controllers\StokOpnameController::class);
     
-    // Pemusnahan
-    Route::resource('pemusnahan', \App\Http\Controllers\PemusnahanObatController::class);
-    
-    // QR Code
-    Route::get('qr', [\App\Http\Controllers\QrCodeController::class, 'index'])->name('qr.index');
-    
-    // Master Data
-    Route::resource('kategori-obat', \App\Http\Controllers\KategoriObatController::class);
-    Route::resource('jenis-obat', \App\Http\Controllers\JenisObatController::class);
-    Route::resource('satuan-obat', \App\Http\Controllers\SatuanObatController::class);
-    Route::resource('unit-rumah-sakit', \App\Http\Controllers\UnitRumahSakitController::class);
-    Route::resource('supplier', \App\Http\Controllers\SupplierController::class);
-    
-    // Reports
-    Route::get('reports/stock', [\App\Http\Controllers\ReportController::class, 'stock'])->name('reports.stock');
-    Route::get('reports/transactions', [\App\Http\Controllers\ReportController::class, 'transactions'])->name('reports.transactions');
-    Route::get('reports/expiry', [\App\Http\Controllers\ReportController::class, 'expiry'])->name('reports.expiry');
-    
-    // Users
+    // Users Management
     Route::resource('users', \App\Http\Controllers\UserController::class);
 });
 
-require __DIR__.'/settings.php';
+// Organized Route Files
+require __DIR__.'/obat.php';         // Medicine-related routes
+require __DIR__.'/transaksi.php';    // Transaction routes
+require __DIR__.'/masterdata.php';   // Master data routes
+require __DIR__.'/laporan.php';      // Report routes
+require __DIR__.'/settings.php';     // User settings routes

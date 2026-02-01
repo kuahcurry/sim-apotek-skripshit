@@ -10,6 +10,6 @@ class QrCodeController extends Controller
 {
     public function index(): Response
     {
-        return Inertia::render('qr/index');
+        return Inertia::render('obat/qr/index');
     }
 }

@@ -14,9 +14,9 @@ return new class extends Migration
         Schema::create('obat', function (Blueprint $table) {
             $table->id();
             $table->string('kode_obat', 50)->unique()->comment('Kode unik obat');
-            $table->string('nama_obat', 200);
-            $table->string('nama_generik', 200)->nullable();
-            $table->string('nama_brand', 200)->nullable();
+            $table->string('nama_obat', 120);
+            $table->string('nama_generik', 120)->nullable();
+            $table->string('nama_brand', 191)->nullable();
             $table->foreignId('kategori_id')->constrained('kategori_obat')->onDelete('restrict');
             $table->foreignId('jenis_id')->constrained('jenis_obat')->onDelete('restrict');
             $table->foreignId('satuan_id')->constrained('satuan_obat')->onDelete('restrict');

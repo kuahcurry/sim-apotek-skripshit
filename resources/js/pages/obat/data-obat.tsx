@@ -2,7 +2,7 @@ import { Button } from '@/components/ui/button';
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
 import { Head, Link, router } from '@inertiajs/react';
-import { Package, Plus, Search } from 'lucide-react';
+import { Package, Plus, Search, Pencil, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -147,17 +147,28 @@ export default function ObatIndex({ obats, filters }: ObatIndexProps) {
                                                 {obat.stok_minimum}
                                             </td>
                                             <td className="p-4 text-right">
-                                                <Button
-                                                    size="sm"
-                                                    variant="outline"
-                                                    asChild
-                                                >
-                                                    <Link
-                                                        href={`/obat/${obat.id}`}
+                                                <div className="flex justify-end gap-2">
+                                                    <Button
+                                                        size="sm"
+                                                        variant="ghost"
+                                                        asChild
                                                     >
-                                                        Detail
-                                                    </Link>
-                                                </Button>
+                                                        <Link href={`/obat/${obat.id}/edit`}>
+                                                            <Pencil className="size-4" />
+                                                        </Link>
+                                                    </Button>
+                                                    <Button
+                                                        size="sm"
+                                                        variant="ghost"
+                                                        onClick={() => {
+                                                            if (confirm('Apakah Anda yakin ingin menghapus obat ini?')) {
+                                                                router.delete(`/obat/${obat.id}`);
+                                                            }
+                                                        }}
+                                                    >
+                                                        <Trash2 className="size-4 text-destructive" />
+                                                    </Button>
+                                                </div>
                                             </td>
                                         </tr>
                                     ))
