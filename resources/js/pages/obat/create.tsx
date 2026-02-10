@@ -4,8 +4,9 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
-import { Head, useForm } from '@inertiajs/react';
-import { Save, X } from 'lucide-react';
+import { Head, useForm, router } from '@inertiajs/react';
+import { Save, X, Upload, Download, FileText } from 'lucide-react';
+import { useState } from 'react';
 
 const breadcrumbs: BreadcrumbItem[] = [
     { title: 'Dashboard', href: '/dashboard' },
@@ -35,17 +36,37 @@ interface CreateProps {
 }
 
 export default function CreateObat({ kategori, jenis, satuan }: CreateProps) {
-    const { data, setData, post, processing, errors } = useForm({
+    const [activeTab, setActiveTab] = useState<'manual' | 'import'>('manual');
+    const [importFile, setImportFile] = useState<File | null>(null);
+    const [importing, setImporting] = useState(false);
+    
+    const { data, setData, post, processing, errors } = useForm<{
+        kode_obat: string;
+        nama_obat: string;
+        nama_generik: string;
+        nama_brand: string;
+        kategori_id: number | undefined;
+        jenis_id: number | undefined;
+        satuan_id: number | undefined;
+        stok_minimum: number;
+        harga_beli: number;
+        harga_jual: number;
+        lokasi_penyimpanan: string;
+        deskripsi: string;
+        efek_samping: string;
+        indikasi: string;
+        kontraindikasi: string;
+    }>({
         kode_obat: '',
         nama_obat: '',
         nama_generik: '',
         nama_brand: '',
-        kategori_id: '',
-        jenis_id: '',
-        satuan_id: '',
-        stok_minimum: '10',
-        harga_beli: '0',
-        harga_jual: '0',
+        kategori_id: undefined,
+        jenis_id: undefined,
+        satuan_id: undefined,
+        stok_minimum: 10,
+        harga_beli: 0,
+        harga_jual: 0,
         lokasi_penyimpanan: '',
         deskripsi: '',
         efek_samping: '',
@@ -55,7 +76,47 @@ export default function CreateObat({ kategori, jenis, satuan }: CreateProps) {
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        post('/obat');
+        
+        // Debug: Log form data before submission
+        console.log('Form Data Before Submit:', data);
+        console.log('Validation Errors:', errors);
+        
+        post('/obat', {
+            onSuccess: () => {
+                console.log('✅ Form submitted successfully');
+            },
+            onError: (errors) => {
+                console.error('❌ Form submission failed:', errors);
+            },
+        });
+    };
+
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files && e.target.files[0]) {
+            setImportFile(e.target.files[0]);
+        }
+    };
+
+    const handleImport = () => {
+        if (!importFile) return;
+        
+        setImporting(true);
+        const formData = new FormData();
+        formData.append('file', importFile);
+        
+        router.post('/obat/import', formData, {
+            onSuccess: () => {
+                setImportFile(null);
+                setImporting(false);
+            },
+            onError: () => {
+                setImporting(false);
+            },
+        });
+    };
+
+    const handleDownloadTemplate = () => {
+        window.location.href = '/obat/download-template';
     };
 
     return (
@@ -66,12 +127,40 @@ export default function CreateObat({ kategori, jenis, satuan }: CreateProps) {
                     <div>
                         <h1 className="text-2xl font-bold">Tambah Obat Baru</h1>
                         <p className="text-sm text-muted-foreground">
-                            Masukkan data obat yang akan ditambahkan
+                            Masukkan data obat secara manual atau import dari file
                         </p>
                     </div>
                 </div>
 
-                <form onSubmit={handleSubmit} className="rounded-xl border border-sidebar-border/70 bg-card p-6">
+                {/* Tabs */}
+                <div className="flex gap-2 border-b border-sidebar-border">
+                    <button
+                        onClick={() => setActiveTab('manual')}
+                        className={`px-4 py-2 text-sm font-medium transition-colors ${
+                            activeTab === 'manual'
+                                ? 'border-b-2 border-primary text-primary'
+                                : 'text-muted-foreground hover:text-foreground'
+                        }`}
+                    >
+                        <FileText className="mr-2 inline-block size-4" />
+                        Input Manual
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('import')}
+                        className={`px-4 py-2 text-sm font-medium transition-colors ${
+                            activeTab === 'import'
+                                ? 'border-b-2 border-primary text-primary'
+                                : 'text-muted-foreground hover:text-foreground'
+                        }`}
+                    >
+                        <Upload className="mr-2 inline-block size-4" />
+                        Import File
+                    </button>
+                </div>
+
+                {/* Manual Input Form */}
+                {activeTab === 'manual' && (
+                    <form onSubmit={handleSubmit} className="rounded-xl border border-sidebar-border/70 bg-card p-6">
                     <div className="grid gap-6 md:grid-cols-2">
                         {/* Kode Obat */}
                         <div className="space-y-2">
@@ -135,8 +224,8 @@ export default function CreateObat({ kategori, jenis, satuan }: CreateProps) {
                                 Kategori <span className="text-destructive">*</span>
                             </Label>
                             <Select
-                                value={data.kategori_id}
-                                onValueChange={(value) => setData('kategori_id', value)}
+                                value={data.kategori_id?.toString() || undefined}
+                                onValueChange={(value) => setData('kategori_id', parseInt(value))}
                                 required
                             >
                                 <SelectTrigger>
@@ -161,8 +250,8 @@ export default function CreateObat({ kategori, jenis, satuan }: CreateProps) {
                                 Jenis <span className="text-destructive">*</span>
                             </Label>
                             <Select
-                                value={data.jenis_id}
-                                onValueChange={(value) => setData('jenis_id', value)}
+                                value={data.jenis_id?.toString() || undefined}
+                                onValueChange={(value) => setData('jenis_id', parseInt(value))}
                                 required
                             >
                                 <SelectTrigger>
@@ -187,8 +276,8 @@ export default function CreateObat({ kategori, jenis, satuan }: CreateProps) {
                                 Satuan <span className="text-destructive">*</span>
                             </Label>
                             <Select
-                                value={data.satuan_id}
-                                onValueChange={(value) => setData('satuan_id', value)}
+                                value={data.satuan_id?.toString() || undefined}
+                                onValueChange={(value) => setData('satuan_id', parseInt(value))}
                                 required
                             >
                                 <SelectTrigger>
@@ -216,7 +305,7 @@ export default function CreateObat({ kategori, jenis, satuan }: CreateProps) {
                                 id="stok_minimum"
                                 type="number"
                                 value={data.stok_minimum}
-                                onChange={(e) => setData('stok_minimum', e.target.value)}
+                                onChange={(e) => setData('stok_minimum', parseInt(e.target.value) || 0)}
                                 placeholder="10"
                                 required
                             />
@@ -233,7 +322,7 @@ export default function CreateObat({ kategori, jenis, satuan }: CreateProps) {
                                 type="number"
                                 step="0.01"
                                 value={data.harga_beli}
-                                onChange={(e) => setData('harga_beli', e.target.value)}
+                                onChange={(e) => setData('harga_beli', parseFloat(e.target.value) || 0)}
                                 placeholder="0"
                             />
                         </div>
@@ -246,7 +335,7 @@ export default function CreateObat({ kategori, jenis, satuan }: CreateProps) {
                                 type="number"
                                 step="0.01"
                                 value={data.harga_jual}
-                                onChange={(e) => setData('harga_jual', e.target.value)}
+                                onChange={(e) => setData('harga_jual', parseFloat(e.target.value) || 0)}
                                 placeholder="0"
                             />
                         </div>
@@ -329,6 +418,80 @@ export default function CreateObat({ kategori, jenis, satuan }: CreateProps) {
                         </Button>
                     </div>
                 </form>
+                )}
+
+                {/* Import File Section */}
+                {activeTab === 'import' && (
+                    <div className="rounded-xl border border-sidebar-border/70 bg-card p-6">
+                        <div className="space-y-6">
+                            {/* Instructions */}
+                            <div className="rounded-lg bg-blue-50 dark:bg-blue-950/20 p-4">
+                                <h3 className="font-semibold text-blue-900 dark:text-blue-100 mb-2">
+                                    Panduan Import Data Obat
+                                </h3>
+                                <ul className="space-y-1 text-sm text-blue-800 dark:text-blue-200">
+                                    <li>• Download template Excel/CSV terlebih dahulu</li>
+                                    <li>• Isi data obat sesuai format yang disediakan</li>
+                                    <li>• Upload file dengan format .xlsx atau .csv</li>
+                                    <li>• Pastikan semua kolom wajib terisi dengan benar</li>
+                                </ul>
+                            </div>
+
+                            {/* Download Template */}
+                            <div>
+                                <Label className="mb-2 block">Download Template</Label>
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    onClick={handleDownloadTemplate}
+                                    className="gap-2"
+                                >
+                                    <Download className="size-4" />
+                                    Download Template Excel
+                                </Button>
+                            </div>
+
+                            {/* File Upload */}
+                            <div className="space-y-2">
+                                <Label htmlFor="import_file">Upload File</Label>
+                                <div className="flex gap-2">
+                                    <Input
+                                        id="import_file"
+                                        type="file"
+                                        accept=".xlsx,.xls,.csv"
+                                        onChange={handleFileChange}
+                                        className="flex-1"
+                                    />
+                                </div>
+                                {importFile && (
+                                    <p className="text-sm text-muted-foreground">
+                                        File terpilih: {importFile.name}
+                                    </p>
+                                )}
+                            </div>
+
+                            {/* Import Button */}
+                            <div className="flex justify-end gap-2">
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    onClick={() => router.visit('/obat')}
+                                >
+                                    <X className="mr-2 size-4" />
+                                    Batal
+                                </Button>
+                                <Button
+                                    type="button"
+                                    onClick={handleImport}
+                                    disabled={!importFile || importing}
+                                >
+                                    <Upload className="mr-2 size-4" />
+                                    {importing ? 'Mengimport...' : 'Import Data'}
+                                </Button>
+                            </div>
+                        </div>
+                    </div>
+                )}
             </div>
         </AppLayout>
     );

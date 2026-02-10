@@ -8,7 +8,8 @@ use App\Models\LogAktivitas;
 use App\Models\QrScanLog;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use SimpleSoftwareIO\QrCode\Facades\QrCode;
+use Endroid\QrCode\QrCode;
+use Endroid\QrCode\Writer\PngWriter;
 
 class QrCodeController extends Controller
 {
@@ -19,12 +20,15 @@ class QrCodeController extends Controller
     {
         $batch->load('obat');
 
-        // Generate QR code as base64
-        $qrCode = QrCode::size(300)
-            ->format('png')
-            ->generate($batch->qr_json);
+        // Generate QR code using endroid/qr-code
+        $qrCode = QrCode::create($batch->qr_json)
+            ->setSize(300)
+            ->setMargin(10);
 
-        $qrCodeBase64 = base64_encode($qrCode);
+        $writer = new PngWriter();
+        $result = $writer->write($qrCode);
+
+        $qrCodeBase64 = base64_encode($result->getString());
 
         LogAktivitas::log(
             auth()->user(),
@@ -141,5 +145,153 @@ class QrCodeController extends Controller
         $logs = $query->paginate($perPage);
 
         return response()->json($logs);
+    }
+
+    /**
+     * Get QR scan analytics/statistics
+     */
+    public function analytics(Request $request): JsonResponse
+    {
+        $period = $request->get('period', 'today'); // today, week, month, all
+
+        // Define date ranges
+        $dateFrom = match ($period) {
+            'today' => now()->startOfDay(),
+            'week' => now()->startOfWeek(),
+            'month' => now()->startOfMonth(),
+            'year' => now()->startOfYear(),
+            default => null,
+        };
+
+        // Base query
+        $query = QrScanLog::query();
+        if ($dateFrom) {
+            $query->where('waktu_scan', '>=', $dateFrom);
+        }
+
+        // Total scans
+        $totalScans = $query->count();
+
+        // Scans by result
+        $scansByResult = QrScanLog::selectRaw('hasil_scan, COUNT(*) as count')
+            ->when($dateFrom, fn($q) => $q->where('waktu_scan', '>=', $dateFrom))
+            ->groupBy('hasil_scan')
+            ->get()
+            ->pluck('count', 'hasil_scan');
+
+        // Scans by method
+        $scansByMethod = QrScanLog::selectRaw('metode_scan, COUNT(*) as count')
+            ->when($dateFrom, fn($q) => $q->where('waktu_scan', '>=', $dateFrom))
+            ->groupBy('metode_scan')
+            ->get()
+            ->pluck('count', 'metode_scan');
+
+        // Most scanned batches
+        $mostScannedBatches = QrScanLog::selectRaw('batch_id, COUNT(*) as scan_count')
+            ->with(['batch.obat'])
+            ->when($dateFrom, fn($q) => $q->where('waktu_scan', '>=', $dateFrom))
+            ->whereNotNull('batch_id')
+            ->groupBy('batch_id')
+            ->orderByDesc('scan_count')
+            ->limit(10)
+            ->get()
+            ->map(fn($log) => [
+                'batch_id' => $log->batch_id,
+                'batch' => $log->batch,
+                'scan_count' => $log->scan_count,
+            ]);
+
+        // Most scanned medicines
+        $mostScannedMedicines = QrScanLog::selectRaw('COUNT(*) as scan_count')
+            ->with(['batch.obat'])
+            ->when($dateFrom, fn($q) => $q->where('waktu_scan', '>=', $dateFrom))
+            ->whereHas('batch')
+            ->get()
+            ->groupBy(fn($log) => $log->batch?->obat?->id)
+            ->map(fn($logs) => [
+                'obat_id' => $logs->first()->batch?->obat?->id,
+                'obat' => $logs->first()->batch?->obat,
+                'scan_count' => $logs->count(),
+            ])
+            ->sortByDesc('scan_count')
+            ->take(10)
+            ->values();
+
+        // Scans by user (top 10)
+        $scansByUser = QrScanLog::selectRaw('user_id, COUNT(*) as scan_count')
+            ->with('user:id,name,email')
+            ->when($dateFrom, fn($q) => $q->where('waktu_scan', '>=', $dateFrom))
+            ->whereNotNull('user_id')
+            ->groupBy('user_id')
+            ->orderByDesc('scan_count')
+            ->limit(10)
+            ->get()
+            ->map(fn($log) => [
+                'user_id' => $log->user_id,
+                'user' => $log->user,
+                'scan_count' => $log->scan_count,
+            ]);
+
+        // Scans by hour (for today)
+        $scansByHour = [];
+        if ($period === 'today') {
+            $scansByHour = QrScanLog::selectRaw('HOUR(waktu_scan) as hour, COUNT(*) as count')
+                ->where('waktu_scan', '>=', now()->startOfDay())
+                ->groupBy('hour')
+                ->orderBy('hour')
+                ->get()
+                ->pluck('count', 'hour')
+                ->toArray();
+
+            // Fill missing hours with 0
+            for ($i = 0; $i < 24; $i++) {
+                if (!isset($scansByHour[$i])) {
+                    $scansByHour[$i] = 0;
+                }
+            }
+            ksort($scansByHour);
+        }
+
+        // Scans trend (last 7 days or 30 days)
+        $trendDays = $period === 'week' ? 7 : ($period === 'month' ? 30 : 7);
+        $scansTrend = [];
+        for ($i = $trendDays - 1; $i >= 0; $i--) {
+            $date = now()->subDays($i)->format('Y-m-d');
+            $count = QrScanLog::whereDate('waktu_scan', $date)->count();
+            $scansTrend[] = [
+                'date' => $date,
+                'count' => $count,
+            ];
+        }
+
+        // Success rate
+        $successCount = $scansByResult[QrScanLog::HASIL_SUCCESS] ?? 0;
+        $successRate = $totalScans > 0 ? round(($successCount / $totalScans) * 100, 2) : 0;
+
+        // Error rate
+        $errorCount = $scansByResult[QrScanLog::HASIL_ERROR] ?? 0;
+        $notFoundCount = $scansByResult[QrScanLog::HASIL_NOT_FOUND] ?? 0;
+        $totalErrors = $errorCount + $notFoundCount;
+        $errorRate = $totalScans > 0 ? round(($totalErrors / $totalScans) * 100, 2) : 0;
+
+        return response()->json([
+            'period' => $period,
+            'date_from' => $dateFrom?->format('Y-m-d H:i:s'),
+            'summary' => [
+                'total_scans' => $totalScans,
+                'success_count' => $successCount,
+                'success_rate' => $successRate,
+                'error_count' => $totalErrors,
+                'error_rate' => $errorRate,
+                'expired_count' => $scansByResult[QrScanLog::HASIL_EXPIRED] ?? 0,
+            ],
+            'scans_by_result' => $scansByResult,
+            'scans_by_method' => $scansByMethod,
+            'most_scanned_batches' => $mostScannedBatches,
+            'most_scanned_medicines' => $mostScannedMedicines,
+            'scans_by_user' => $scansByUser,
+            'scans_by_hour' => $scansByHour,
+            'scans_trend' => $scansTrend,
+        ]);
     }
 }

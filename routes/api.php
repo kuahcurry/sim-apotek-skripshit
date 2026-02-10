@@ -31,7 +31,7 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
-Route::middleware(['auth:sanctum'])->group(function () {
+Route::middleware(['auth:web'])->group(function () {
     // Dashboard & Analytics
     Route::prefix('dashboard')->group(function () {
         Route::get('/stats', [DashboardController::class, 'stats']);
@@ -144,6 +144,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
         Route::get('/generate/{batch}', [QrCodeController::class, 'generate'])->name('api.qr.generate');
         Route::post('/scan', [QrCodeController::class, 'scan'])->name('api.qr.scan');
         Route::get('/scan-logs', [QrCodeController::class, 'scanLogs'])->name('api.qr.scan-logs');
+        Route::get('/analytics', [QrCodeController::class, 'analytics'])->name('api.qr.analytics');
     });
 
     // Notifikasi

@@ -9,11 +9,9 @@ use Laravel\Fortify\Features;
  * Organized routes are split into separate files for better maintainability
  */
 
-// Welcome/Landing Page
+// Welcome/Landing Page - Redirect to login
 Route::get('/', function () {
-    return Inertia::render('welcome', [
-        'canRegister' => Features::enabled(Features::registration()),
-    ]);
+    return redirect('/login');
 })->name('home');
 
 // Authenticated Routes
@@ -34,6 +32,15 @@ Route::middleware(['auth', 'verified'])->group(function () {
     
     // Users Management
     Route::resource('users', \App\Http\Controllers\UserController::class);
+    
+    // FAQ & Documentation
+    Route::get('faq', function () {
+        return Inertia::render('faq');
+    })->name('faq');
+    
+    Route::get('dokumentasi', function () {
+        return Inertia::render('dokumentasi');
+    })->name('dokumentasi');
 });
 
 // Organized Route Files

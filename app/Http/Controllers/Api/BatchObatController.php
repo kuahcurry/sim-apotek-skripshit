@@ -15,6 +15,12 @@ class BatchObatController extends Controller
      */
     public function index(Request $request): JsonResponse
     {
+        \Log::info('BatchObat API index called', [
+            'user_authenticated' => auth()->check(),
+            'user_id' => auth()->id(),
+            'guard' => auth()->getDefaultDriver(),
+        ]);
+
         $query = BatchObat::with(['obat:id,nama_obat,kode_obat', 'supplier:id,nama']);
 
         // Filter by obat

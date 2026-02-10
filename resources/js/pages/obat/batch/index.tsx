@@ -1,10 +1,13 @@
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
 import { Head, Link, router } from '@inertiajs/react';
-import { Package, Plus, Pencil, Trash2, AlertTriangle, CheckCircle2, XCircle } from 'lucide-react';
+import { Package, Plus, Pencil, Trash2, AlertTriangle, CheckCircle2, XCircle, QrCode, Eye, Download, Printer, Copy } from 'lucide-react';
+import axios from 'axios';
 
 const breadcrumbs: BreadcrumbItem[] = [
     { title: 'Dashboard', href: '/dashboard' },
@@ -14,6 +17,7 @@ const breadcrumbs: BreadcrumbItem[] = [
 interface Batch {
     id: number;
     nomor_batch: string;
+    kode_qr: string;
     tanggal_produksi?: string;
     tanggal_expired: string;
     tanggal_masuk: string;
@@ -45,9 +49,84 @@ interface Props {
 }
 
 export default function BatchIndex({ batches }: Props) {
+    const [qrCode, setQrCode] = useState<string>('');
+    const [qrData, setQrData] = useState<any>(null);
+    const [qrDialogOpen, setQrDialogOpen] = useState(false);
+    const [generatingQr, setGeneratingQr] = useState(false);
+
     const handleDelete = (id: number) => {
         if (confirm('Apakah Anda yakin ingin menghapus batch ini?')) {
             router.delete(`/batch/${id}`);
+        }
+    };
+
+    const generateQr = async (batch: Batch) => {
+        setGeneratingQr(true);
+        try {
+            const response = await axios.get(`/api/qr/generate/${batch.id}`);
+            setQrCode(response.data.qr_code);
+            setQrData(response.data.qr_data);
+            setQrDialogOpen(true);
+        } catch (error) {
+            console.error('Failed to generate QR:', error);
+            alert('Gagal generate QR code');
+        } finally {
+            setGeneratingQr(false);
+        }
+    };
+
+    const downloadQr = () => {
+        if (!qrCode || !qrData) return;
+        const link = document.createElement('a');
+        link.href = qrCode;
+        link.download = `QR-${qrData.batch?.nomor || 'code'}.png`;
+        link.click();
+    };
+
+    const printQr = () => {
+        if (!qrCode || !qrData) return;
+        const printWindow = window.open('', '_blank');
+        if (printWindow) {
+            printWindow.document.write(`
+                <html>
+                    <head>
+                        <title>Print QR Code</title>
+                        <style>
+                            body { 
+                                display: flex; 
+                                justify-content: center; 
+                                align-items: center; 
+                                height: 100vh; 
+                                margin: 0; 
+                                flex-direction: column;
+                                font-family: Arial, sans-serif;
+                            }
+                            img { max-width: 400px; border: 2px solid #ddd; padding: 20px; background: white; }
+                            .info { text-align: center; margin-top: 20px; }
+                            .medicine { font-size: 18px; font-weight: bold; margin: 5px 0; }
+                            .batch { font-size: 16px; color: #666; margin: 5px 0; }
+                            .code { font-size: 14px; color: #999; font-family: monospace; }
+                        </style>
+                    </head>
+                    <body>
+                        <img src="${qrCode}" />
+                        <div class="info">
+                            <div class="medicine">${qrData.obat?.nama || ''}</div>
+                            <div class="batch">Batch: ${qrData.batch?.nomor || ''}</div>
+                            <div class="code">Kode: ${qrData.kode_qr || ''}</div>
+                        </div>
+                    </body>
+                </html>
+            `);
+            printWindow.document.close();
+            printWindow.print();
+        }
+    };
+
+    const copyQrCode = () => {
+        if (qrData?.kode_qr) {
+            navigator.clipboard.writeText(qrData.kode_qr);
+            alert('Kode QR berhasil disalin!');
         }
     };
 
@@ -113,13 +192,14 @@ export default function BatchIndex({ batches }: Props) {
                                 <TableHead className="text-right">Stok</TableHead>
                                 <TableHead className="text-right">Harga Beli</TableHead>
                                 <TableHead>Status</TableHead>
+                                <TableHead className="text-center">QR</TableHead>
                                 <TableHead className="text-right">Aksi</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
                             {batches.data.length === 0 ? (
                                 <TableRow>
-                                    <TableCell colSpan={9} className="h-24 text-center">
+                                    <TableCell colSpan={10} className="h-24 text-center">
                                         <div className="flex flex-col items-center justify-center py-8">
                                             <Package className="size-12 text-muted-foreground mb-2" />
                                             <p className="text-muted-foreground">Belum ada batch obat</p>
@@ -194,8 +274,24 @@ export default function BatchIndex({ batches }: Props) {
                                                     <Badge variant="outline">Ditarik</Badge>
                                                 )}
                                             </TableCell>
+                                            <TableCell className="text-center">
+                                                <Button 
+                                                    variant="ghost" 
+                                                    size="sm"
+                                                    onClick={() => generateQr(batch)}
+                                                    disabled={generatingQr}
+                                                    title="Generate QR Code"
+                                                >
+                                                    <QrCode className="size-4 text-primary" />
+                                                </Button>
+                                            </TableCell>
                                             <TableCell className="text-right">
                                                 <div className="flex justify-end gap-2">
+                                                    <Button variant="ghost" size="sm" asChild>
+                                                        <Link href={`/batch/${batch.id}`}>
+                                                            <Eye className="size-4" />
+                                                        </Link>
+                                                    </Button>
                                                     <Button variant="ghost" size="sm" asChild>
                                                         <Link href={`/batch/${batch.id}/edit`}>
                                                             <Pencil className="size-4" />
@@ -245,6 +341,56 @@ export default function BatchIndex({ batches }: Props) {
                         </div>
                     </div>
                 )}
+
+                <Dialog open={qrDialogOpen} onOpenChange={setQrDialogOpen}>
+                    <DialogContent className="sm:max-w-md">
+                        <DialogHeader>
+                            <DialogTitle>QR Code</DialogTitle>
+                            <DialogDescription>
+                                QR code untuk batch {qrData?.batch?.nomor || ''}
+                            </DialogDescription>
+                        </DialogHeader>
+                        {qrCode && (
+                            <div className="space-y-4">
+                                <div className="flex justify-center p-4 border rounded-lg bg-white">
+                                    <img src={qrCode} alt="QR Code" className="max-w-[300px] w-full" />
+                                </div>
+                                
+                                {qrData && (
+                                    <div className="space-y-2 p-3 border rounded-lg bg-muted/30">
+                                        <div>
+                                            <p className="text-sm text-muted-foreground">Obat:</p>
+                                            <p className="font-semibold">{qrData.obat?.nama}</p>
+                                        </div>
+                                        <div>
+                                            <p className="text-sm text-muted-foreground">Batch:</p>
+                                            <p className="font-mono">{qrData.batch?.nomor}</p>
+                                        </div>
+                                        <div>
+                                            <p className="text-sm text-muted-foreground">Kode QR:</p>
+                                            <p className="font-mono text-sm">{qrData.kode_qr}</p>
+                                        </div>
+                                    </div>
+                                )}
+
+                                <div className="grid grid-cols-3 gap-2">
+                                    <Button onClick={downloadQr} variant="outline" size="sm">
+                                        <Download className="h-4 w-4 mr-1" />
+                                        Download
+                                    </Button>
+                                    <Button onClick={printQr} variant="outline" size="sm">
+                                        <Printer className="h-4 w-4 mr-1" />
+                                        Print
+                                    </Button>
+                                    <Button onClick={copyQrCode} variant="outline" size="sm">
+                                        <Copy className="h-4 w-4 mr-1" />
+                                        Copy
+                                    </Button>
+                                </div>
+                            </div>
+                        )}
+                    </DialogContent>
+                </Dialog>
             </div>
         </AppLayout>
     );
